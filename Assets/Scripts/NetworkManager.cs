@@ -15,6 +15,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     public TMP_Text textBarraEstado;
     public TMP_Text textJugadores;
     public TMP_Text textInfoJuego;
+    public TMP_InputField ifNickname;
     private NetworkRunner runner;
 
     [Header("Paneles")]
@@ -32,6 +33,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     public TMP_InputField ifMinJugadores;
     public TMP_InputField ifMaxJugadores;
     public Toggle boolPrivada;
+    public GameObject playerPrefab;
     
 
     private int maxJugadores = 10;
@@ -61,41 +63,41 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     /// <summary>
     /// Intenta conectar al servidor para entrar a una lobby
     /// </summary>
-    public async void ConnectToServer()
-    {
-
-        textBarraEstado.text = "Conectando con el servidor...";
-
-        //Iniciamos el runner
-        if (runner == null)
-        {
-            runner = gameObject.AddComponent<NetworkRunner>();
-        }
-
-        //Definimos los argumentos de la conexión
-        var startArgs = new StartGameArgs()
-        {
-            GameMode = GameMode.Shared,
-            SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>(),
-
-
-        };
-
-        //Lanzamos la conexión
-        var res = await runner.StartGame(startArgs);
-
-
-        if (res.Ok)
-        {
-            textBarraEstado.text = "Conexión con el servidor establecida";
-            CambiarPanel(panelBienvenida);
-        }
-        else
-        {
-            textBarraEstado.text = "No se ha podido establecer la conexión con el servidor";
-        }
-
-    }
+    //public async void ConnectToServer()
+    //{
+    //
+    //    textBarraEstado.text = "Conectando con el servidor...";
+    //
+    //    //Iniciamos el runner
+    //    if (runner == null)
+    //    {
+    //        runner = gameObject.AddComponent<NetworkRunner>();
+    //    }
+    //
+    //    //Definimos los argumentos de la conexión
+    //    var startArgs = new StartGameArgs()
+    //    {
+    //        GameMode = GameMode.Shared,
+    //        SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>(),
+    //
+    //
+    //    };
+    //
+    //    //Lanzamos la conexión
+    //    var res = await runner.StartGame(startArgs);
+    //
+    //
+    //    if (res.Ok)
+    //    {
+    //        textBarraEstado.text = "Conexión con el servidor establecida";
+    //        CambiarPanel(panelBienvenida);
+    //    }
+    //    else
+    //    {
+    //        textBarraEstado.text = "No se ha podido establecer la conexión con el servidor";
+    //    }
+    //
+    //}
 
 
     /// <summary>
@@ -134,7 +136,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnVolverBtClick()
     {
-        CambiarPanel(panelAnterior);
+        CambiarPanel(panelBienvenida);
     }
 
 
@@ -150,9 +152,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     public void OnUnirseSalaBtClick()
     {
         
-            UnirseSala();
-        
-
+        UnirseSala();
     }
 
     private bool FiltroOkDatosCrearSala()
@@ -164,12 +164,27 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
             || maxJugadores < minJugadores
             )
         {
-            Debug.Log(ifNombreSala.text);
+            //Debug.Log(ifNombreSala.text);
             return false;
         }
-        Debug.Log(ifNombreSala.text);
+        //Debug.Log(ifNombreSala.text);
         return true;
     }
+
+
+    private void CreacionDeJugador()
+    {
+        //Instanciar el prefab para que lo vean todos los jugadores conectados
+        NetworkObject playerObject = runner.Spawn(playerPrefab, Vector3.zero, Quaternion.identity, runner.LocalPlayer);
+
+        //Vincular el prefab al PlayerRef local
+        runner.SetPlayerObject(runner.LocalPlayer, playerObject);
+
+        //Establecer el nickname
+        PlayerNetwork playerNetwork = playerObject.GetComponent<PlayerNetwork>();
+        playerNetwork.SetNickname(ifNickname.text);
+    }
+
 
 
     public async void CrearSala()
@@ -195,6 +210,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
                 ["minimo"] = minJugadores
             };
 
+
         //Definimos los argumentos de conexión
         var startArgs = new StartGameArgs()
         {
@@ -213,6 +229,8 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             textBarraEstado.text = "Sala " + startArgs.SessionName + " creada correctamente";
             CambiarPanel(panelSalaCreada);
+            CreacionDeJugador();
+
         }
         else
         {
@@ -253,6 +271,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         {
             textBarraEstado.text = "Entrada a sala " + startArgs.SessionName + " realizada correctamente";
             CambiarPanel(panelSalaCreada);
+            CreacionDeJugador();
         }
         else
         {
@@ -262,44 +281,44 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     }
 
 
-    public async void UnirseSala2(List<SessionInfo> sessions)
-    {
+    //public async void UnirseSala2(List<SessionInfo> sessions)
+    //{
 
-        textBarraEstado.text = "Uniéndose a sala...";
-        //Antes de crear o unirnos a la sala, tenemos que destruir
-        //el runner que está en ejecución (sólo el componente)
-        //y esperamos a que termine 
-        await DestroyNetworkRunnerAsync();
+        //textBarraEstado.text = "Uniéndose a sala...";
+        ////Antes de crear o unirnos a la sala, tenemos que destruir
+        ////el runner que está en ejecución (sólo el componente)
+        ////y esperamos a que termine 
+        //await DestroyNetworkRunnerAsync();
 
-        //Iniciamos el nuevo runner
-        if (runner == null)
-        {
-            runner = gameObject.AddComponent<NetworkRunner>();
+        ////Iniciamos el nuevo runner
+        //if (runner == null)
+        //{
+            //runner = gameObject.AddComponent<NetworkRunner>();
             
-        }
+        //}
 
 
-        //Definimos los argumentos de conexión
-        var startArgs = new StartGameArgs()
-        {
-            GameMode = GameMode.Shared,
-            SessionName = sessions[0].Name
-        };
+        ////Definimos los argumentos de conexión
+        //var startArgs = new StartGameArgs()
+        //{
+            //GameMode = GameMode.Shared,
+            //SessionName = sessions[0].Name
+        //};
 
-        //Lanzamos el juego 
-        StartGameResult resultado = await runner.StartGame(startArgs);
+        ////Lanzamos el juego 
+        //StartGameResult resultado = await runner.StartGame(startArgs);
 
-        if (resultado.Ok)
-        {
-            textBarraEstado.text = "Entrada a sala " + startArgs.SessionName + " realizada correctamente";
-            CambiarPanel(panelSalaCreada);
-        }
-        else
-        {
-            textBarraEstado.text = "No se ha podido entrar a la sala" + startArgs.SessionName;
-        }
+        //if (resultado.Ok)
+        //{
+            //textBarraEstado.text = "Entrada a sala " + startArgs.SessionName + " realizada correctamente";
+            //CambiarPanel(panelSalaCreada);
+        //}
+        //else
+        //{
+            //textBarraEstado.text = "No se ha podido entrar a la sala" + startArgs.SessionName;
+        //}
 
-    }
+    //}
 
 
     /// <summary>
@@ -334,14 +353,20 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         //throw new NotImplementedException();
-        //jugadores.Add(player.PlayerId);
 
         string texto = "";
+        string nickname = "";
 
-        foreach (var item in runner.ActivePlayers)
+        foreach (var playerInfo in runner.ActivePlayers)
         {
-           texto += $"Jugador {item} \n";
+            if (runner.TryGetPlayerObject(playerInfo, out NetworkObject playerObject))
+            {
+                PlayerNetwork playerNetwork = playerObject.GetComponent<PlayerNetwork>();
+                nickname = playerNetwork.Nickname;
+            }
+            texto += $"Jugador {nickname} \n";
         }
+        textInfoJuego.text = $"Num Jugadores: \r\n{runner.SessionInfo.PlayerCount} / {runner.SessionInfo.MaxPlayers} \r\n\r\nPrivacidad: \r\n{(boolPrivada.isOn ? ("Cerrada") : ("Abierta"))}";
         textJugadores.text = texto;
     }
 
@@ -350,10 +375,11 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         //throw new NotImplementedException();
         string texto = "";
 
-        foreach (var item in runner.ActivePlayers)
+        foreach (var playerInfo in runner.ActivePlayers)
         {
-            texto += $"Jugador {item} \n";
+            texto += $"Jugador {playerInfo} \n";
         }
+        textInfoJuego.text = $"Num Jugadores: \r\n{runner.SessionInfo.PlayerCount} / {runner.SessionInfo.MaxPlayers} \r\n\r\nPrivacidad: \r\n{(boolPrivada.isOn ? ("Cerrada") : ("Abierta"))}";
         textJugadores.text = texto;
     }
 
